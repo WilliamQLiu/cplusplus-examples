@@ -9,6 +9,9 @@ Run with: ./a.out
 
 using namespace std;
 
+
+// TODO: Functions
+
 int main(){
 
     cout << "Hello world!" << endl;
@@ -84,7 +87,8 @@ int main(){
     int intNumberGuessed = 0;
     do {
         cout << "Guess between 1 and 10: ";
-        getline(cin, numberGuessed);  // get input from user
+        //getline(cin, numberGuessed);  // get input from user
+        numberGuessed = "4";  // cheating here
         intNumberGuessed = stoi(numberGuessed);  // string to integer, use stod for double
 
     } while(intNumberGuessed !=4);
@@ -107,6 +111,15 @@ int main(){
     cout << "Dog Name is: " << dogName << endl;
     dogName.replace(3, 4, "XYZ");
     cout << "Dog Name is: " << dogName << endl;
+
+    // vectors (arrays, but their size can change)
+    vector <int> lotteryNumVect(10);
+    int lotteryNumArray[5] = {4, 13, 14, 24, 34};
+    lotteryNumVect.insert(lotteryNumVect.begin(), lotteryNumArray, lotteryNumArray+3);
+    lotteryNumVect.insert(lotteryNumVect.begin()+5, 44);
+    cout << lotteryNumVect.at(5) << endl;
+    lotteryNumVect.push_back(6);  // add data to the end of the vector
+    cout << "Is empty: " << lotteryNumVect.empty() << endl;  // check if vector is empty
 
     return 0;
 }
