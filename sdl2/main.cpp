@@ -30,8 +30,8 @@ SDL_Window* gWindow = NULL;  // make sure to have pointers point to NULL if not 
 // The surface contained by the window
 SDL_Surface* gScreenSurface = NULL;
 
-// The image we will load and show on the screen
-SDL_Surface* gHelloWorld = NULL;
+//The image we will load and show on the screen
+SDL_Surface* gXOut = NULL;
 
 
 bool init()
@@ -72,8 +72,8 @@ bool loadMedia()
     IMG_Init(IMG_INIT_PNG);
 
     // Load a splash image
-    gHelloWorld = IMG_Load("loading_image.png");
-    if(gHelloWorld == NULL)
+    gXOut = IMG_Load("loading_image.png");
+    if(gXOut == NULL)
     {
         printf("Unable to load image %s! SDL Error: %s\n", "loading_image.bmp", SDL_GetError());
         success = false;
@@ -84,8 +84,8 @@ bool loadMedia()
 void close()
 {
     // Deallocate surface
-    SDL_FreeSurface(gHelloWorld);
-    gHelloWorld = NULL;
+    SDL_FreeSurface(gXOut);
+    gXOut = NULL;
 
     // Destroy the window
     SDL_DestroyWindow(gWindow);
@@ -115,14 +115,32 @@ int main(int argc, char* args[])
         }
         else
         {
-            // Apply the image
-            SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+            bool quit = false;  // Main Loop Flag
+            SDL_Event e;  // Event Handler, an event is a key press, mouse motion, joy button press
 
-            // Update the surface
-            SDL_UpdateWindowSurface(gWindow);
+            // while application is running
+            while( !quit )
+            {
+                // Handle events on queue by polling them for the most recent event
+                while( SDL_PollEvent( &e ) != 0 )  // When SDL_PollEvent is empty, returns 0
+                {
+                    // User requests quit
+                    if( e.type == SDL_QUIT )
+                    {
+                        quit = true;
+                    }
+                }
 
-            // Wait two seconds
-            SDL_Delay(2000);
+                // Apply the image
+                SDL_BlitSurface(gXOut, NULL, gScreenSurface, NULL);
+
+                // Update the surface
+                SDL_UpdateWindowSurface(gWindow);
+
+                // Wait two seconds
+                //SDL_Delay(2000);
+
+            }
         }
     }
 
