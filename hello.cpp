@@ -37,6 +37,110 @@ void actYourAge(int& age) {
     cout << "Act your age: " << age << endl;
 }
 
+// Classes
+class Animal {
+
+    // private can only be changed by functions in the class (encapsulation)
+    private:
+        int height;
+        int weight;
+        string name;
+
+        // static means this variable's values are shared by every object of all Animal classes
+        static int numOfAnimals;
+
+    // callable methods that allow access to private
+    public:
+        int getHeight() { return height; }
+        int getWeight() { return weight; }
+        string getName() { return name; }
+        void setHeight(int cm) { height = cm; }
+        void setWeight(int kg) { weight = kg; }
+        void setName(string animalName) { name = animalName; }
+
+        void setAll(int, int, string);  // create a Prototype of a function
+
+        // Constructor - a prototype
+        Animal(int, int, string);  // function that is called when every object is created
+
+        // Deconstructor -a prototype
+        ~Animal();
+
+        // Overloading, name is the same, but attributes have to be different
+        Animal();
+
+        // static methods can only access static attributes (e.g. static int numOfAnimals)
+        static int getNumOfAnimals() { return numOfAnimals; }
+
+        void toString();
+};
+
+
+// Declare our classes
+int Animal::numOfAnimals = 0;  // Declare our static variables with Class name::static variable
+// :: is called the 'scope' operator
+
+// define what is passed in (i.e. does what the constructor does)
+void Animal::setAll(int height, int weight, string name) {
+    // the object specific
+    this -> height = height;
+    this -> weight = weight;
+    this -> name = name;
+    Animal::numOfAnimals++;
+}
+
+// Constructor - same as void Animal::setAll(...)
+Animal::Animal(int height, int weight, string name) {
+    // the object specific
+    this -> height = height;
+    this -> weight = weight;
+    this -> name = name;
+    Animal::numOfAnimals++;
+}
+
+// Deconstructor
+Animal::~Animal() {
+    cout << "Animal " << this -> name << " destroyed" << endl;
+}
+
+// Overloaded Constructor (when no attributes are passed in)
+Animal::Animal(){
+    Animal::numOfAnimals++;
+}
+
+void Animal::toString() {
+    cout << this -> name << " is " << this -> height <<
+        " cms tall and " << this -> weight << " kgs in weight" << endl;
+}
+
+// Class Inheritance
+class Dog : public Animal {
+    private:
+        string sound = "Woof";
+    public:
+        void getSound() { cout << sound << endl; }
+
+        Dog(int, int, string, string);
+
+        // Default Constructor
+        Dog() : Animal() {};  // call super class constructor
+
+        void toString();
+};
+
+Dog::Dog(int height, int weight, string name, string bark) :
+Animal(height, weight, name) {
+    this -> sound = bark;
+}
+
+void Dog::toString() {
+
+    // since height, weight are private in Animal, we have to use get methods to access
+    cout << this -> getName() << " is " << this -> getHeight() <<
+        " cms tall and " << this -> getWeight() << " kgs in weight and says "
+        << this -> sound << endl;
+}
+
 int main(){
 
     cout << "Hello world!" << endl;
@@ -226,6 +330,28 @@ int main(){
     cout << "Age: " << someAge << endl;
     actYourAge(ageRef);
     cout << "Age after pass by reference function: " << someAge << endl;
+
+    // Using Classes
+    Animal fred;
+    fred.setHeight(33);
+    fred.setWeight(10);
+    fred.setName("Fred");
+    cout << fred.getName() << " is " << fred.getHeight() <<
+        " cms tall and " << fred.getWeight() << " kgs in weight" << endl;
+
+    Animal tom(36, 15, "Tom");
+    cout << tom.getName() << " is " << tom.getHeight() <<
+        " cms tall and " << tom.getWeight() << " kgs in weight" << endl;
+
+    // Using Inherited Class
+    Dog spot(38, 16, "Spot", "Woof");
+    cout << "Number of Animals " << Animal::getNumOfAnimals() << endl;
+    spot.getSound();
+
+    tom.toString();
+    spot.toString();
+
+    spot.Animal::toString();
 
     return 0;
 }
