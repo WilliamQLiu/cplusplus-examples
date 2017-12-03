@@ -10,7 +10,15 @@ Run with: ./a.out
 using namespace std;
 
 
-// TODO: Functions
+// Functions - return type, then parameters with default values
+int addNumbers(int firstNum, int secondNum=0) {
+    int combinedValue = firstNum + secondNum;
+    return combinedValue;
+}
+// can overload functions (same name, different attributes)
+int addNumbers(int firstNum, int secondNum, int thirdNum) {
+    return firstNum + secondNum + thirdNum;
+}
 
 int main(){
 
@@ -120,6 +128,50 @@ int main(){
     cout << lotteryNumVect.at(5) << endl;
     lotteryNumVect.push_back(6);  // add data to the end of the vector
     cout << "Is empty: " << lotteryNumVect.empty() << endl;  // check if vector is empty
+
+    // calling functions
+    cout << "Calling Function: " << addNumbers(1) << endl;
+    cout << "Calling Overloaded Function: " << addNumbers(2, 5, 6) << endl;  // calls the overloaded function
+
+    // Write files
+    string willQuote = "A day without sunshine is night!";
+    ofstream writer1("willquote.txt");
+    if (! writer1){
+        cout << "Error opening file" << endl;
+        return -1;
+    } else {
+        writer1 << willQuote << endl;
+        writer1.close();
+    }
+
+    // opens a stream to append to whats there with ios:app
+    // ios::binary : treats the file as binary
+    // ios::in : open af ile to read input
+    // ios::trunc : default
+    // ios::out : open a file to write output
+    ofstream writer2("willquote.txt", ios::app);
+    if (! writer2) {
+        cout << "Error opening file" << endl;
+        return -1;
+    } else {
+        writer2 << "\n -Steve Martin" << endl;
+        writer2.close();
+    }
+
+    // reading files
+    char letter;
+    ifstream reader1("willquote.txt");
+    if(! reader1) {
+        cout << "Error opening file" << endl;
+        return -1;
+    } else {
+        for(int i=0; ! reader1.eof(); i++) {
+            reader1.get(letter);
+            cout << letter;
+        }
+        cout << endl;
+        reader1.close();
+    }
 
     return 0;
 }
