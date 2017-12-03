@@ -20,6 +20,23 @@ int addNumbers(int firstNum, int secondNum, int thirdNum) {
     return firstNum + secondNum + thirdNum;
 }
 
+// Pointers and Referencers,
+// Use a pointer if value needs to be assigned a new address value
+//   E.g. you don't want to initialize at declaration what the address value is
+// Use Reference if the variable does not need to be reassigned again (since its only a memory address)
+
+// Passing by Pointer *
+void makeMeYoung(int* age) {
+    cout << "I used to be " << *age << endl;
+    *age = 21;
+}
+
+// Passing by Reference &
+void actYourAge(int& age) {
+    age = 35;
+    cout << "Act your age: " << age << endl;
+}
+
 int main(){
 
     cout << "Hello world!" << endl;
@@ -172,6 +189,43 @@ int main(){
         cout << endl;
         reader1.close();
     }
+
+    // try-catch
+    int number = 0;
+    try{
+        if(number != 0) {
+            cout << 2/number << endl;
+        } else throw(number);  //a throw will look for a catch
+    }
+    catch(int number){
+        cout << number << " is not valid" << endl;
+    }
+
+    // Pointers (*) and Reference (&)
+    int someAge = 33;
+    char someGrade = 'A';
+    cout << "Size of int " << sizeof(someAge) << endl;
+    cout << "Size of char " << sizeof(someGrade) << endl;
+    cout << "someAge is located at " << &someAge << endl;  // 0x..... memory address
+    // Remeber that functions can be either passed by value or passed by reference
+    int* agePtr = &someAge;  // create pointer that references that memory address
+    cout << "Address of pointer " << agePtr << endl;  // 0x....
+    cout << "Data at memory address " << *agePtr << endl;
+
+    // More about Pointers
+    int someNums[5] = {4, 13, 14, 24, 34};
+    int* numArrayPtr = someNums;
+    cout << "Address " << numArrayPtr << " Value " << *numArrayPtr << endl;
+    numArrayPtr++;
+    cout << "Address " << numArrayPtr << " Value " << *numArrayPtr << endl;
+    makeMeYoung(&someAge);  // pass someAge by reference
+    cout << "I'm " << someAge << " years old now " << endl;
+    int& ageRef = someAge;  // & to reference
+    cout << "Age: " << someAge << endl;
+    ageRef++;
+    cout << "Age: " << someAge << endl;
+    actYourAge(ageRef);
+    cout << "Age after pass by reference function: " << someAge << endl;
 
     return 0;
 }
