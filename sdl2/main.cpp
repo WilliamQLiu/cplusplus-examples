@@ -154,13 +154,28 @@ void close()
 
 SDL_Surface* loadSurface( std::string path)
 {
+    // The final optimized image
+    SDL_Surface* optimizedSurface = NULL;
+
     // Load image at the specified path
     SDL_Surface* loadedSurface = IMG_Load( path.c_str() );
     if( loadedSurface == NULL )
     {
         printf(" Unable to load image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
     }
-    return loadedSurface;
+    else
+    {
+        // Convert the surface to the screen's format
+        optimizedSurface = SDL_ConvertSurface( loadedSurface, gScreenSurface -> format, 0 );
+        if( optimizedSurface == NULL)
+        {
+            printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+        }
+
+        // Get rid of old loaded surface
+        SDL_FreeSurface( loadedSurface );
+    }
+    return optimizedSurface;
 }
 
 int main(int argc, char* args[])
@@ -226,8 +241,13 @@ int main(int argc, char* args[])
                     }
                 }
 
-                // Apply the image
-                SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+                // Apply the image (stretched)
+                SDL_Rect stretchRect;
+                stretchRect.x = 0;
+                stretchRect.y = 0;
+                stretchRect.w = SCREEN_WIDTH;
+                stretchRect.h = SCREEN_HEIGHT;
+                SDL_BlitScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect);
 
                 // Update the surface
                 SDL_UpdateWindowSurface(gWindow);
