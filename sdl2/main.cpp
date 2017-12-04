@@ -9,8 +9,11 @@ To compile on Ubuntu
 // Using SDL and Standard IO
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
+#include <SDL_mixer.h>  // for sound
 #include <stdio.h>
 #include <string>
+
 
 // Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -74,8 +77,19 @@ bool init()
         }
         else
         {
-            // Get window surface
-            gScreenSurface = SDL_GetWindowSurface(gWindow);
+            // Initialize PNG Loading
+            int imgFlags = IMG_INIT_PNG;
+            if( !( IMG_Init( imgFlags ) & imgFlags ) )
+            {
+                printf("SDL_image could not initialize! SDL_Image Error: %s\n", IMG_GetError() );
+                success = false;
+            }
+            else
+            {
+                // Get window surface
+                gScreenSurface = SDL_GetWindowSurface(gWindow);
+            }
+
         }
     }
     return success;
