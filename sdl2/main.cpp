@@ -36,7 +36,7 @@ class LTexture
         void free();
 
         // Renders texture at given point
-        void render( int x, int y );
+        void render( int x, int y , SDL_Rect* clip = NULL );  // accepts a rect for which part to render / clip
 
         // Gets image dimensions
         int getWidth();
@@ -89,6 +89,10 @@ SDL_Texture* gTexture = NULL;
 // Scene Textures using LTexture
 LTexture gFooTexture;
 LTexture gBackgroundTexture;
+
+// Create some spirtes
+SDL_Rect gSpriteClips[ 4 ];
+LTexture gSpriteSheetTexture;
 
 LTexture::LTexture()
 {
@@ -157,11 +161,21 @@ void LTexture::free()
     }
 }
 
-void LTexture::render( int x, int y)
+void LTexture::render( int x, int y, SDL_Rect* clip )
 {
+    // Render a texture, with optional clip param to see what parts to clip
+
     // Set rendering space and render to screen
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-    SDL_RenderCopy( gRenderer, mTexture, NULL, &renderQuad );
+
+    // Set clip rendering dimensions
+    if( clip != NULL )
+    {
+        renderQuad.w = clip->w;
+        renderQuad.h = clip->h;
+    }
+
+    SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
 }
 
 int LTexture::getWidth()
@@ -233,19 +247,19 @@ bool loadMedia()
     // Loading success flag
     bool success = true;
 
-    // Load texture
-    if( !gFooTexture.loadFromFile( "resources/foo.png" ))
-    {
-        printf("Failed to load Foo texture image!\n" );
-        success = false;
-    }
+    // Load Foo texture
+    //if( !gFooTexture.loadFromFile( "resources/foo.png" ))
+    //{
+    //    printf("Failed to load Foo texture image!\n" );
+    //    success = false;
+    //}
 
-    // Load background texture
-    if( !gBackgroundTexture.loadFromFile("resources/background.png"))
-    {
-        printf("Failed to load background texture image!\n" );
-        success = false;
-    }
+    //// Load background texture
+    //if( !gBackgroundTexture.loadFromFile("resources/background.png"))
+    //{
+    //    printf("Failed to load background texture image!\n" );
+    //    success = false;
+    //}
 
     // Load PNG texture
     //gTexture = loadTexture( "resources/loading_image.png");
@@ -254,6 +268,39 @@ bool loadMedia()
     //    printf("Failed to load texture image!\n");
     //    success = false;
     //}
+
+    // Load Sprite Sheet Texture
+    if( !gSpriteSheetTexture.loadFromFile( "resources/dots.png" ) )
+    {
+        printf("Failed to load sprite sheet texture!\n" );
+        success = false;
+    }
+    else
+    {
+        // Set top left sprite
+        gSpriteClips[ 0 ].x = 0;
+        gSpriteClips[ 0 ].y = 0;
+        gSpriteClips[ 0 ].w = 100;
+        gSpriteClips[ 0 ].h = 100;
+
+        // Set top right sprite
+        gSpriteClips[ 1 ].x = 100;
+        gSpriteClips[ 1 ].y = 0;
+        gSpriteClips[ 1 ].w = 100;
+        gSpriteClips[ 1 ].h = 100;
+
+        // Set bottom left sprite
+        gSpriteClips[ 2 ].x = 0;
+        gSpriteClips[ 2 ].y = 100;
+        gSpriteClips[ 2 ].w = 100;
+        gSpriteClips[ 2 ].h = 100;
+
+        // Set bottom right sprite
+        gSpriteClips[ 3 ].x = 100;
+        gSpriteClips[ 3 ].y = 100;
+        gSpriteClips[ 3 ].w = 100;
+        gSpriteClips[ 3 ].h = 100;
+    }
 
     return success;
 }
@@ -395,10 +442,16 @@ int main(int argc, char* args[])
                 //createDrawings();
 
                 // Render background texture to screen
-                gBackgroundTexture.render( 0, 0 );
+                //gBackgroundTexture.render( 0, 0 );
 
                 // Render Foo to the screen
-                gFooTexture.render( 240, 190 );
+                //gFooTexture.render( 240, 190 );
+
+                // Render sprites
+                gSpriteSheetTexture.render( 0, 0, &gSpriteClips[ 0 ] );  // top left sprite
+                gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 1 ].w, 0, &gSpriteClips[ 1 ] );  // top right sprite
+                gSpriteSheetTexture.render( 0, SCREEN_HEIGHT - gSpriteClips[ 2 ].h, &gSpriteClips[ 2 ] );  // bottom left sprite
+                gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );  // bottom right sprite
 
                 // Update screen with our render
                 SDL_RenderPresent( gRenderer );
