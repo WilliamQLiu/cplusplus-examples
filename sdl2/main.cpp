@@ -206,16 +206,30 @@ int main(int argc, char* args[])
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );  // Set clearing color as White
                 SDL_RenderClear( gRenderer );
 
-                // Now that screen is cleared, render the texture to screen
-                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+                // CREATE VIEWPORTS
+                // Create top left viewport
+                SDL_Rect topLeftViewport;
+                topLeftViewport.x = 0;
+                topLeftViewport.y = 0;
+                topLeftViewport.w = SCREEN_WIDTH / 2;
+                topLeftViewport.h = SCREEN_HEIGHT / 2;
+                SDL_RenderSetViewport( gRenderer, &topLeftViewport );
+                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );  // Now that screen is cleared, render the texture to screen
+
+                // Create top right viewport
+                SDL_Rect topRightViewport;
+                topLeftViewport.x = SCREEN_WIDTH / 2;
+                topLeftViewport.y = 0;
+                topLeftViewport.w = SCREEN_WIDTH / 2;
+                topLeftViewport.h = SCREEN_HEIGHT / 2;
+                SDL_RenderSetViewport( gRenderer, &topLeftViewport );
+                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );  // Now that screen is cleared, render the texture to screen
 
                 // DRAWING
-
                 // Draw red filled quad, a solid rectangle
                 SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 }; // Area we want filled with x, y, width, height
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-                SDL_RenderFillRect( gRenderer, &fillRect );
-
+                SDL_RenderFillRect( gRenderer, &fillRect );  // update texture to screen
 
                 // Draw blue horizontal line
                 SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );
