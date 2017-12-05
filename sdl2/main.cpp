@@ -35,6 +35,15 @@ class LTexture
         // Deallocates texture
         void free();
 
+        // Set color modulation - increase that color throughout the texture
+        void setColor( Uint8 red, Uint8 green, Uint8 blue );  // Uint is Unsigned and 8 bit (0 to 255)
+
+        // Set blending
+        void setBlendMode( SDL_BlendMode blending );
+
+        // Set alpha modulation
+        void setAlpha( Uint8 alpha );
+
         // Renders texture at given point
         void render( int x, int y , SDL_Rect* clip = NULL );  // accepts a rect for which part to render / clip
 
@@ -176,6 +185,27 @@ void LTexture::render( int x, int y, SDL_Rect* clip )
     }
 
     SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+}
+
+// Enables blending
+void LTexture::setBlendMode( SDL_BlendMode blending )
+{
+    // set blending function
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+
+
+// The lower the alpha, the more transparent a texture is
+void LTexture::setAlpha( Uint8 alpha )
+{
+    // Modulate texture alpha
+    SDL_SetTextureAlphaMod( mTexture, alpha );
+}
+
+void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
+{
+    // Modulate texture
+    SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
 int LTexture::getWidth()
