@@ -45,7 +45,10 @@ class LTexture
         void setAlpha( Uint8 alpha );
 
         // Renders texture at given point
-        void render( int x, int y , SDL_Rect* clip = NULL );  // accepts a rect for which part to render / clip
+        void render( int x, int y , SDL_Rect* clip = NULL, double angle = 0.0,
+                     SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+        // SDL_Rect* clip accepts a rect for which part to render / clip
+        // SDL_RendererFlip lets you rotate at an angle or flip the object
 
         // Gets image dimensions
         int getWidth();
@@ -108,6 +111,8 @@ const int WALKING_ANIMATION_FRAMES = 4;
 SDL_Rect gSpriteWalkClips[ 4 ];
 LTexture gSpriteWalkSheetTexture;
 
+// Texture for Rotation and Flipping
+LTexture gArrowTexture;
 
 LTexture::LTexture()
 {
@@ -176,9 +181,9 @@ void LTexture::free()
     }
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip )
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
 {
-    // Render a texture, with optional clip param to see what parts to clip
+    // Render a texture, with optional clip param to see what parts to clip and rotation or flip
 
     // Set rendering space and render to screen
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
@@ -190,7 +195,7 @@ void LTexture::render( int x, int y, SDL_Rect* clip )
         renderQuad.h = clip->h;
     }
 
-    SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+    SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
 }
 
 // Enables blending
@@ -340,33 +345,39 @@ bool loadMedia()
     //}
 
     // Load Walking Sprite Animation
-    if( !gSpriteWalkSheetTexture.loadFromFile( "resources/foo_walk.png" ))
+    //if( !gSpriteWalkSheetTexture.loadFromFile( "resources/foo_walk.png" ))
+    //{
+    //    printf( "Failed to load walking animation texture!\n" );
+    //    success = false;
+    //}
+    //else
+    //{
+    //    // Set Sprite Class
+    //    gSpriteWalkClips[ 0 ].x = 0;
+    //    gSpriteWalkClips[ 0 ].y = 0;
+    //    gSpriteWalkClips[ 0 ].w = 64;
+    //    gSpriteWalkClips[ 0 ].h = 205;
+
+    //    gSpriteWalkClips[ 1 ].x = 64;
+    //    gSpriteWalkClips[ 1 ].y = 0;
+    //    gSpriteWalkClips[ 1 ].w = 64;
+    //    gSpriteWalkClips[ 1 ].h = 205;
+
+    //    gSpriteWalkClips[ 2 ].x = 128;
+    //    gSpriteWalkClips[ 2 ].y = 0;
+    //    gSpriteWalkClips[ 2 ].w = 64;
+    //    gSpriteWalkClips[ 2 ].h = 205;
+
+    //    gSpriteWalkClips[ 3 ].x = 196;
+    //    gSpriteWalkClips[ 3 ].y = 0;
+    //    gSpriteWalkClips[ 3 ].w = 64;
+    //    gSpriteWalkClips[ 3 ].h = 205;
+    //}
+
+    if( !gArrowTexture.loadFromFile( "resources/arrow.png" ) )
     {
-        printf( "Failed to load walking animation texture!\n" );
+        printf( "Failed to load arrow texture!\n" );
         success = false;
-    }
-    else
-    {
-        // Set Sprite Class
-        gSpriteWalkClips[ 0 ].x = 0;
-        gSpriteWalkClips[ 0 ].y = 0;
-        gSpriteWalkClips[ 0 ].w = 64;
-        gSpriteWalkClips[ 0 ].h = 205;
-
-        gSpriteWalkClips[ 1 ].x = 64;
-        gSpriteWalkClips[ 1 ].y = 0;
-        gSpriteWalkClips[ 1 ].w = 64;
-        gSpriteWalkClips[ 1 ].h = 205;
-
-        gSpriteWalkClips[ 2 ].x = 128;
-        gSpriteWalkClips[ 2 ].y = 0;
-        gSpriteWalkClips[ 2 ].w = 64;
-        gSpriteWalkClips[ 2 ].h = 205;
-
-        gSpriteWalkClips[ 3 ].x = 196;
-        gSpriteWalkClips[ 3 ].y = 0;
-        gSpriteWalkClips[ 3 ].w = 64;
-        gSpriteWalkClips[ 3 ].h = 205;
     }
 
     return success;
@@ -438,6 +449,22 @@ void createDrawings()
     SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );  // Render the texture to screen
 }
 
+void createRotateFlip()
+{
+    // Clear the screen
+    SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+    SDL_RenderClear( gRenderer );
+
+    double degrees = 30;  // angle of rotation
+    SDL_RendererFlip flipType = SDL_FLIP_NONE;  // type of flip
+
+    flipType = SDL_FLIP_HORIZONTAL;
+    //flipType = SDL_FLIP_VERTICAL;
+
+    // Render an arrow
+    gArrowTexture.render( ( SCREEN_WIDTH - gArrowTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gArrowTexture.getHeight() ) / 2, NULL, degrees, NULL, flipType );
+}
+
 SDL_Texture* loadTexture( std::string path)
 {
     // The final texture
@@ -485,6 +512,7 @@ int main(int argc, char* args[])
             bool quit = false;  // Main Loop Flag
             SDL_Event e;  // Event Handler, an event is a key press, mouse motion, joy button press
 
+
             // Current animation frame
             int frame = 0;
 
@@ -524,23 +552,21 @@ int main(int argc, char* args[])
                 //gSpriteSheetTexture.render( SCREEN_WIDTH - gSpriteClips[ 3 ].w, SCREEN_HEIGHT - gSpriteClips[ 3 ].h, &gSpriteClips[ 3 ] );  // bottom right sprite
 
                 // Render walking frames
-                SDL_Rect* currentClip = &gSpriteWalkClips[ frame / 4 ];
-                gSpriteWalkSheetTexture.render( ( SCREEN_WIDTH - currentClip->w ) / 2,
-                    (SCREEN_HEIGHT - currentClip->h) / 2, currentClip );
+                //SDL_Rect* currentClip = &gSpriteWalkClips[ frame / 4 ];
+                //gSpriteWalkSheetTexture.render( ( SCREEN_WIDTH - currentClip->w ) / 2,
+                //    (SCREEN_HEIGHT - currentClip->h) / 2, currentClip );
+                //++frame;  // go to next frame
+                //// Cycle animation
+                //if( frame / 4 >= WALKING_ANIMATION_FRAMES )
+                //{
+                //    frame = 0;
+                //}
 
+                createRotateFlip();
                 // Update screen with our render
                 SDL_RenderPresent( gRenderer );
 
-                // Go to the next frame
-                ++frame;
-
-                // Cycle animation
-                if( frame / 4 >= WALKING_ANIMATION_FRAMES )
-                {
-                    frame = 0;
-                }
-
-                // Wait two seconds
+                                // Wait two seconds
                 //SDL_Delay(2000);
 
             }
