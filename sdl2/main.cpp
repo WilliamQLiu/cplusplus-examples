@@ -1,18 +1,20 @@
 /*
 To compile on Ubuntu
 * sudo apt-get install --yes libsdl2-dev
-* g++ main.cpp -I /usr/include/SDL2/ -lSDL2 -lGL -lSDL2_image
+* g++ main.cpp -I /usr/include/SDL2/ -lSDL2 -lGL -lSDL2_image -lSDL2_ttf -g
+ -g to debug
 * Execute with ./a.out
 
 */
 
 // Using SDL and Standard IO
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
-#include <SDL_mixer.h>  // for sound
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>  // for sound
 #include <stdio.h>
 #include <string>
+#include <cmath>
 
 
 // Screen dimension constants
@@ -31,6 +33,9 @@ class LTexture
 
         // Load image at a specified path
         bool loadFromFile( std::string path );
+
+        // Creates image from font string
+        bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
 
         // Deallocates texture
         void free();
@@ -114,6 +119,10 @@ LTexture gSpriteWalkSheetTexture;
 // Texture for Rotation and Flipping
 LTexture gArrowTexture;
 
+// Globally used font
+TTF_Font *gFont = NULL;
+LTexture gTextTexture;
+
 LTexture::LTexture()
 {
     // This Constructor initializes variables
@@ -166,6 +175,40 @@ bool LTexture::loadFromFile( std::string path )
 
     // Return success
     mTexture = newTexture;
+    return mTexture != NULL;
+}
+
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+{
+    // Get rid of preexisting texture
+    free();
+
+    // Render text surface, need surface to render onto
+    SDL_Surface* textSurface = TTF_RenderText_Solid( gFont, textureText.c_str(), textColor );
+    if( textSurface == NULL )
+    {
+        printf( "Unable to render text surface! SDL_TTF Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        // Create texture from surface pixels
+        mTexture = SDL_CreateTextureFromSurface( gRenderer, textSurface );
+        if( mTexture == NULL )
+        {
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else
+        {
+            // Get image dimensions
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+
+        // Get rid of old surface
+        SDL_FreeSurface( textSurface );
+    }
+
+    // Return success
     return mTexture != NULL;
 }
 
@@ -278,6 +321,13 @@ bool init()
                     printf("SDL_image could not initialize! SDL_Image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
+
+                // Initialize SDL_TTF
+                if( TTF_Init() == -1 )
+                {
+                    printf("SDL_TTF could not initialize! SDL_TTF Error: %s\n", TTF_GetError() );
+                    success = false;
+                }
             }
         }
     }
@@ -374,10 +424,29 @@ bool loadMedia()
     //    gSpriteWalkClips[ 3 ].h = 205;
     //}
 
-    if( !gArrowTexture.loadFromFile( "resources/arrow.png" ) )
+    // Arrow for rotation and flip
+    //if( !gArrowTexture.loadFromFile( "resources/arrow.png" ) )
+    //{
+    //    printf( "Failed to load arrow texture!\n" );
+    //    success = false;
+    //}
+
+    // Open the font
+    gFont = TTF_OpenFont( "resources/lazy.ttf", 28);
+    if( gFont == NULL )
     {
-        printf( "Failed to load arrow texture!\n" );
+        printf( "Failed to load lazy font! SDL_TTF Error: %s\n", TTF_GetError() );
         success = false;
+    }
+    else
+    {
+        // Render text
+        SDL_Color textColor = { 0, 0, 0 };
+        if( !gTextTexture.loadFromRenderedText( "Hello World!", textColor ) )
+        {
+            printf( "Failed to render text texture!\n" );
+            success = false;
+        }
     }
 
     return success;
@@ -389,6 +458,13 @@ void close()
     gFooTexture.free();
     gBackgroundTexture.free();
 
+    // free loaded images
+    gTextTexture.free();
+
+    // Free global font
+    TTF_CloseFont( gFont );
+    gFont = NULL;
+
     // Free loaded image
     //SDL_DestroyTexture( gTexture );
     //gTexture = NULL;
@@ -398,6 +474,9 @@ void close()
     SDL_DestroyWindow( gWindow );
     gWindow = NULL;
     gRenderer = NULL;
+
+    // Shut down TTF
+    TTF_Quit();
 
     // Shut down SDL_Image
     IMG_Quit();
@@ -512,9 +591,8 @@ int main(int argc, char* args[])
             bool quit = false;  // Main Loop Flag
             SDL_Event e;  // Event Handler, an event is a key press, mouse motion, joy button press
 
-
             // Current animation frame
-            int frame = 0;
+            //int frame = 0;
 
             // while application is running
             while( !quit )
@@ -531,6 +609,7 @@ int main(int argc, char* args[])
 
                 // Clear the screen with the color last set from SDL_SetRenderDrawColor
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );  // Set clearing color as White
+
                 SDL_RenderClear( gRenderer );
 
                 // CREATE VIEWPORTS
@@ -562,11 +641,14 @@ int main(int argc, char* args[])
                 //    frame = 0;
                 //}
 
-                createRotateFlip();
+                //createRotateFlip();
+
+                gTextTexture.render( ( SCREEN_WIDTH - gTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTextTexture.getHeight() ) / 2 );
+
                 // Update screen with our render
                 SDL_RenderPresent( gRenderer );
 
-                                // Wait two seconds
+                // Wait two seconds
                 //SDL_Delay(2000);
 
             }
