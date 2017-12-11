@@ -1,7 +1,7 @@
 /*
 To compile on Ubuntu
 * sudo apt-get install --yes libsdl2-dev
-* g++ main.cpp -I /usr/include/SDL2/ -lSDL2 -lGL -lSDL2_image -lSDL2_ttf -g
+* g++ main.cpp -I /usr/include/SDL2/ -lSDL2 -lGL -lSDL2_image -lSDL2_ttf -lSDL2_mixer -g
  -g to debug
 * Execute with ./a.out -g
 
@@ -180,6 +180,18 @@ LTexture gUpTexture;
 LTexture gDownTexture;
 LTexture gLeftTexture;
 LTexture gRightTexture;
+
+//Scene texture
+LTexture gPromptTexture;
+
+// Music that will be played
+Mix_Music *gMusic = NULL;
+
+// Sound effects that will be used
+Mix_Chunk *gScratch = NULL;
+Mix_Chunk *gHigh = NULL;
+Mix_Chunk *gMedium = NULL;
+Mix_Chunk *gLow = NULL;
 
 LTexture::LTexture()
 {
@@ -424,7 +436,7 @@ bool init()
     bool success = true;
 
     // Initialize SDL
-    if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) < 0 )
     {
         printf( "SDL could not initalize! SDL_Error: %s\n", SDL_GetError() );
         success = false;
@@ -474,6 +486,13 @@ bool init()
                 //    printf("SDL_TTF could not initialize! SDL_TTF Error: %s\n", TTF_GetError() );
                 //    success = false;
                 //}
+
+                // Initialize SDL_mixer
+                if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
+                {
+                    printf( "SDL_mixer could not initialize! SDL_Mixer Error: %s\n", Mix_GetError() );
+                    success = false;
+                }
             }
         }
     }
@@ -620,34 +639,76 @@ bool loadMedia()
     // }
 
     // Load key press textures
-    if( !gPressTexture.loadFromFile( "resources/press.png" ) )
+    // if( !gPressTexture.loadFromFile( "resources/press.png" ) )
+    // {
+    //     printf( "Failed to load press texture!\n" );
+    //     success = false;
+    // }
+
+    // if( !gUpTexture.loadFromFile( "resources/up.png" ) )
+    // {
+    //     printf( "Failed to load up texture!\n" );
+    //     success = false;
+    // }
+    // if( !gDownTexture.loadFromFile( "resources/down.png" ) )
+    // {
+    //     printf( "Failed to load down texture!\n" );
+    //     success = false;
+    // }
+    // if( !gLeftTexture.loadFromFile( "resources/left.png" ) )
+    // {
+    //     printf( "Failed to load left texture!\n" );
+    //     success = false;
+    // }
+    // if( !gRightTexture.loadFromFile( "resources/right.png" ) )
+    // {
+    //     printf( "Failed to load right texture!\n" );
+    //     success = false;
+    // }
+
+    // Music
+    if( !gPromptTexture.loadFromFile( "resources/prompt.png" ) )
     {
-        printf( "Failed to load press texture!\n" );
+        printf( "Failed to load prompt texture!\n" );
+        success = false;
+    }
+    // Load Music
+    gMusic = Mix_LoadMUS( "resources/beat.wav" );
+    if( gMusic == NULL )
+    {
+        printf( "Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
 
-    if( !gUpTexture.loadFromFile( "resources/up.png" ) )
+    // Load Sound Effects
+    gScratch = Mix_LoadWAV( "resources/scratch.wav" );
+    if( gScratch == NULL )
     {
-        printf( "Failed to load up texture!\n" );
+        printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
-    if( !gDownTexture.loadFromFile( "resources/down.png" ) )
+
+    gHigh = Mix_LoadWAV( "resources/high.wav" );
+    if( gHigh == NULL )
     {
-        printf( "Failed to load down texture!\n" );
+        printf( "Failed to load high sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
-    if( !gLeftTexture.loadFromFile( "resources/left.png" ) )
+
+    gMedium = Mix_LoadWAV( "resources/medium.wav" );
+    if( gMedium == NULL )
     {
-        printf( "Failed to load left texture!\n" );
+        printf( "Failed to load medium sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
-    if( !gRightTexture.loadFromFile( "resources/right.png" ) )
+
+    gLow = Mix_LoadWAV( "resources/low.wav" );
+    if( gLow == NULL )
     {
-        printf( "Failed to load right texture!\n" );
+        printf( "Failed to load low sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
     return success;
-
 }
 
 void close()
@@ -667,11 +728,32 @@ void close()
     //SDL_DestroyTexture( gTexture );
     //gTexture = NULL;
 
+    // Free loaded images
+    gPromptTexture.free();
+
+    // Free sound effects
+    Mix_FreeChunk( gScratch );
+    Mix_FreeChunk( gHigh );
+    Mix_FreeChunk( gMedium );
+    Mix_FreeChunk( gLow );
+    gScratch = NULL;
+    gHigh = NULL;
+    gMedium = NULL;
+    gLow = NULL;
+
+    // Free Music
+    Mix_FreeMusic( gMusic );
+    gMusic = NULL;
+
+
     // Destroy the window and renderer
     SDL_DestroyRenderer( gRenderer );
     SDL_DestroyWindow( gWindow );
     gWindow = NULL;
     gRenderer = NULL;
+
+    // Shut down Music
+    Mix_Quit();
 
     // Shut down TTF
     //TTF_Quit();
@@ -768,8 +850,6 @@ SDL_Texture* loadTexture( std::string path)
     return newTexture;
 }
 
-
-
 int main(int argc, char* args[])
 {
     // Start up SDL and create the window
@@ -807,6 +887,63 @@ int main(int argc, char* args[])
                         quit = true;
                     }
 
+                    // Handle Music
+                    else if( e.type == SDL_KEYDOWN )
+					{
+						switch( e.key.keysym.sym )
+						{
+							//Play high sound effect
+							case SDLK_1:
+							Mix_PlayChannel( -1, gHigh, 0 );
+							break;
+
+							//Play medium sound effect
+							case SDLK_2:
+							Mix_PlayChannel( -1, gMedium, 0 );
+							break;
+
+							//Play low sound effect
+							case SDLK_3:
+							Mix_PlayChannel( -1, gLow, 0 );
+							break;
+
+							//Play scratch sound effect
+							case SDLK_4:
+							Mix_PlayChannel( -1, gScratch, 0 );
+							break;
+
+							case SDLK_9:
+							//If there is no music playing
+							if( Mix_PlayingMusic() == 0 )
+							{
+								//Play the music
+								Mix_PlayMusic( gMusic, -1 );
+							}
+							//If music is being played
+							else
+							{
+								//If the music is paused
+								if( Mix_PausedMusic() == 1 )
+								{
+									//Resume the music
+									Mix_ResumeMusic();
+								}
+								//If the music is playing
+								else
+								{
+									//Pause the music
+									Mix_PauseMusic();
+								}
+							}
+							break;
+
+							case SDLK_0:
+							//Stop the music
+							Mix_HaltMusic();
+							break;
+						}
+					}
+
                     // Set texture based on current keystate
                     const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL );
                     if( currentKeyStates[ SDL_SCANCODE_UP] )
@@ -835,6 +972,9 @@ int main(int argc, char* args[])
                     //{
                     //    gButtons[ i ].handleEvent( &e );
                     //}
+
+                    // Play sound effects
+
                 }
 
                 // Clear the screen with the color last set from SDL_SetRenderDrawColor
@@ -886,6 +1026,9 @@ int main(int argc, char* args[])
 
                 // Render Font
                 //gTextTexture.render( ( SCREEN_WIDTH - gTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTextTexture.getHeight() ) / 2 );
+
+                // Render Prompt for Music
+				gPromptTexture.render( 0, 0 );
 
                 // Update screen with our render
                 SDL_RenderPresent( gRenderer );
