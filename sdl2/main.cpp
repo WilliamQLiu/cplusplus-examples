@@ -111,6 +111,37 @@ class LButton
 };
 
 
+// a dot that will move around the screen
+class Dot
+{
+    public:
+        // dimensions of the dot
+        static const int DOT_WIDTH = 20;
+        static const int DOT_HEIGHT = 20;
+
+        // Maximum axis velocity of the dot
+        static const int DOT_VEL = 10;
+
+        // Initialize the variables
+        Dot();
+
+        // Takes key presses and adjusts the dot's velocity
+        void handleEvent( SDL_Event& e);
+
+        // Moves the dot
+        void move();
+
+        // Shows the dot on the screen
+        void render();
+
+    private:
+        // X and Y offsets of the dot
+        int mPosX, mPosY;
+
+        // the velocity of the dot
+        int mVelX, mVelY;
+};
+
 // Key press surfaces constants
 enum KeyPressSurfaces
 {
@@ -192,6 +223,9 @@ Mix_Chunk *gScratch = NULL;
 Mix_Chunk *gHigh = NULL;
 Mix_Chunk *gMedium = NULL;
 Mix_Chunk *gLow = NULL;
+
+// Show the Dot
+LTexture gDotTexture;
 
 LTexture::LTexture()
 {
@@ -428,6 +462,75 @@ void LButton::render()
 {
     // Show current button sprite
     gButtonSpriteSheetTexture.render( mPosition.x, mPosition.y, &gSpriteClips[ mCurrentSprite ] );
+}
+
+Dot::Dot()
+{
+    // Initialize the offsets
+    mPosX = 0;
+    mPosY = 0;
+
+    // Initialize the velocity
+    mVelX = 0;
+    mVelY = 0;
+}
+
+void Dot::handleEvent( SDL_Event& e )
+{
+    // if a key was pressed
+    if( e.type == SDL_KEYDOWN && e.key.repeat == 0 )
+    {
+        // Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+            case SDLK_UP: mVelY -= DOT_VEL; break;
+            case SDLK_DOWN: mVelY += DOT_VEL; break;
+            case SDLK_LEFT: mVelX -= DOT_VEL; break;
+            case SDLK_RIGHT: mVelX += DOT_VEL; break;
+        }
+    }
+
+    // If a key was released
+    else if( e.type == SDL_KEYUP && e.key.repeat == 0 )
+    {
+        // Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+            case SDLK_UP: mVelY += DOT_VEL; break;
+            case SDLK_DOWN: mVelY -= DOT_VEL; break;
+            case SDLK_LEFT: mVelX += DOT_VEL; break;
+            case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+        }
+    }
+}
+
+void Dot::move()
+{
+    // Move the dot left or right
+    mPosX += mVelX;
+
+    // If the dot went too far right or left
+    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
+    {
+        // Move back
+        mPosX -= mVelX;
+    }
+
+    // Move the dot up or down
+    mPosY += mVelY;
+
+    // If the dot went too far up or down
+    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
+    {
+        // Move back
+        mPosY -= mVelY;
+    }
+}
+
+void Dot::render()
+{
+    // Show the dot
+    gDotTexture.render( mPosX, mPosY );
 }
 
 bool init()
@@ -708,6 +811,14 @@ bool loadMedia()
         printf( "Failed to load low sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
+
+    // Load dot texture
+    if( !gDotTexture.loadFromFile( "resources/dot.bmp" ) )
+    {
+        printf( "Failed to load dot texture!\n" );
+        success = false;
+    }
+
     return success;
 }
 
@@ -720,6 +831,7 @@ void close()
     // free loaded images
     gTextTexture.free();
 
+
     // Free global font
     //TTF_CloseFont( gFont );
     //gFont = NULL;
@@ -730,6 +842,9 @@ void close()
 
     // Free loaded images
     gPromptTexture.free();
+
+    // Free loaded images
+    gDotTexture.free();
 
     // Free sound effects
     Mix_FreeChunk( gScratch );
@@ -873,7 +988,10 @@ int main(int argc, char* args[])
             //int frame = 0;
 
             // Current rendered texture
-            LTexture* currentTexture = NULL;
+            //LTexture* currentTexture = NULL;
+
+            // Create the Dot that will move around on the screen
+            Dot dot;
 
             // while application is running
             while( !quit )
@@ -888,84 +1006,84 @@ int main(int argc, char* args[])
                     }
 
                     // Handle Music
-                    else if( e.type == SDL_KEYDOWN )
-					{
-						switch( e.key.keysym.sym )
-						{
-							//Play high sound effect
-							case SDLK_1:
-							Mix_PlayChannel( -1, gHigh, 0 );
-							break;
+                    // else if( e.type == SDL_KEYDOWN )
+					// {
+					// 	switch( e.key.keysym.sym )
+					// 	{
+					// 		//Play high sound effect
+					// 		case SDLK_1:
+					// 		Mix_PlayChannel( -1, gHigh, 0 );
+					// 		break;
 
-							//Play medium sound effect
-							case SDLK_2:
-							Mix_PlayChannel( -1, gMedium, 0 );
-							break;
+					// 		//Play medium sound effect
+					// 		case SDLK_2:
+					// 		Mix_PlayChannel( -1, gMedium, 0 );
+					// 		break;
 
-							//Play low sound effect
-							case SDLK_3:
-							Mix_PlayChannel( -1, gLow, 0 );
-							break;
+					// 		//Play low sound effect
+					// 		case SDLK_3:
+					// 		Mix_PlayChannel( -1, gLow, 0 );
+					// 		break;
 
-							//Play scratch sound effect
-							case SDLK_4:
-							Mix_PlayChannel( -1, gScratch, 0 );
-							break;
+					// 		//Play scratch sound effect
+					// 		case SDLK_4:
+					// 		Mix_PlayChannel( -1, gScratch, 0 );
+					// 		break;
 
-							case SDLK_9:
-							//If there is no music playing
-							if( Mix_PlayingMusic() == 0 )
-							{
-								//Play the music
-								Mix_PlayMusic( gMusic, -1 );
-							}
-							//If music is being played
-							else
-							{
-								//If the music is paused
-								if( Mix_PausedMusic() == 1 )
-								{
-									//Resume the music
-									Mix_ResumeMusic();
-								}
-								//If the music is playing
-								else
-								{
-									//Pause the music
-									Mix_PauseMusic();
-								}
-							}
-							break;
+					// 		case SDLK_9:
+					// 		//If there is no music playing
+					// 		if( Mix_PlayingMusic() == 0 )
+					// 		{
+					// 			//Play the music
+					// 			Mix_PlayMusic( gMusic, -1 );
+					// 		}
+					// 		//If music is being played
+					// 		else
+					// 		{
+					// 			//If the music is paused
+					// 			if( Mix_PausedMusic() == 1 )
+					// 			{
+					// 				//Resume the music
+					// 				Mix_ResumeMusic();
+					// 			}
+					// 			//If the music is playing
+					// 			else
+					// 			{
+					// 				//Pause the music
+					// 				Mix_PauseMusic();
+					// 			}
+					// 		}
+					// 		break;
 
-							case SDLK_0:
-							//Stop the music
-							Mix_HaltMusic();
-							break;
-						}
-					}
+					// 		case SDLK_0:
+					// 		//Stop the music
+					// 		Mix_HaltMusic();
+					// 		break;
+					// 	}
+					// }
 
-                    // Set texture based on current keystate
-                    const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL );
-                    if( currentKeyStates[ SDL_SCANCODE_UP] )
-                    {
-                        currentTexture = &gUpTexture;
-                    }
-                    else if( currentKeyStates[ SDL_SCANCODE_DOWN ] )
-                    {
-                        currentTexture = &gDownTexture;
-                    }
-                    else if( currentKeyStates[ SDL_SCANCODE_LEFT ] )
-                    {
-                        currentTexture = &gLeftTexture;
-                    }
-                    else if( currentKeyStates[ SDL_SCANCODE_RIGHT ] )
-                    {
-                        currentTexture = &gRightTexture;
-                    }
-                    else
-                    {
-                        currentTexture = &gPressTexture;
-                    }
+                    // // Set texture based on current keystate
+                    // const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL );
+                    // if( currentKeyStates[ SDL_SCANCODE_UP] )
+                    // {
+                    //     currentTexture = &gUpTexture;
+                    // }
+                    // else if( currentKeyStates[ SDL_SCANCODE_DOWN ] )
+                    // {
+                    //     currentTexture = &gDownTexture;
+                    // }
+                    // else if( currentKeyStates[ SDL_SCANCODE_LEFT ] )
+                    // {
+                    //     currentTexture = &gLeftTexture;
+                    // }
+                    // else if( currentKeyStates[ SDL_SCANCODE_RIGHT ] )
+                    // {
+                    //     currentTexture = &gRightTexture;
+                    // }
+                    // else
+                    // {
+                    //     currentTexture = &gPressTexture;
+                    // }
 
                     // Handle button events
                     //for( int i = 0; i < TOTAL_BUTTONS; ++i )
@@ -973,9 +1091,11 @@ int main(int argc, char* args[])
                     //    gButtons[ i ].handleEvent( &e );
                     //}
 
-                    // Play sound effects
+                    dot.handleEvent( e );
 
                 }
+
+                dot.move();
 
                 // Clear the screen with the color last set from SDL_SetRenderDrawColor
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );  // Set clearing color as White
@@ -989,7 +1109,7 @@ int main(int argc, char* args[])
                 //}
 
                 // Render current texture
-                currentTexture->render( 0, 0 );
+                //currentTexture->render( 0, 0 );
 
                 //SDL_RenderPresent( gRenderer );
 
@@ -1028,7 +1148,10 @@ int main(int argc, char* args[])
                 //gTextTexture.render( ( SCREEN_WIDTH - gTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTextTexture.getHeight() ) / 2 );
 
                 // Render Prompt for Music
-				gPromptTexture.render( 0, 0 );
+				//gPromptTexture.render( 0, 0 );
+
+                // Render objects
+                dot.render();
 
                 // Update screen with our render
                 SDL_RenderPresent( gRenderer );
