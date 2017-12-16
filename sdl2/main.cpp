@@ -128,8 +128,8 @@ class Dot
         // Takes key presses and adjusts the dot's velocity
         void handleEvent( SDL_Event& e);
 
-        // Moves the dot
-        void move();
+        // Moves the dot and checks collision
+        void move( SDL_Rect& wall );
 
         // Shows the dot on the screen
         void render();
@@ -140,6 +140,9 @@ class Dot
 
         // the velocity of the dot
         int mVelX, mVelY;
+
+        // Dot's collision box
+        SDL_Rect mCollider;
 };
 
 // Key press surfaces constants
@@ -162,6 +165,9 @@ bool loadMedia();
 
 // Frees media and shuts down SDL
 void close();
+
+// Box collision detector
+bool checkCollision( SDL_Rect a, SDL_Rect b );
 
 // Loads individual image (SDL_Surface is software rendering whereas SDL_Texture is hardware rendering)
 SDL_Texture* loadTexture( std:: string path);
@@ -466,9 +472,15 @@ void LButton::render()
 
 Dot::Dot()
 {
+    // Constructor
+
     // Initialize the offsets
     mPosX = 0;
     mPosY = 0;
+
+    // Set collision box dimension
+    mCollider.w = DOT_WIDTH;
+    mCollider.h = DOT_HEIGHT;
 
     // Initialize the velocity
     mVelX = 0;
@@ -504,26 +516,30 @@ void Dot::handleEvent( SDL_Event& e )
     }
 }
 
-void Dot::move()
+void Dot::move( SDL_Rect& wall )
 {
     // Move the dot left or right
     mPosX += mVelX;
+    mCollider.x = mPosX;
 
-    // If the dot went too far right or left
-    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) )
+    // If the dot collided or went too far right or left
+    if( ( mPosX < 0 ) || ( mPosX + DOT_WIDTH > SCREEN_WIDTH ) || checkCollision( mCollider, wall ) )
     {
         // Move back
         mPosX -= mVelX;
+        mCollider.x = mPosX;
     }
 
     // Move the dot up or down
     mPosY += mVelY;
+    mCollider.y = mPosY;
 
     // If the dot went too far up or down
-    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) )
+    if( ( mPosY < 0 ) || ( mPosY + DOT_HEIGHT > SCREEN_HEIGHT ) || checkCollision( mCollider, wall ) )
     {
         // Move back
         mPosY -= mVelY;
+        mCollider.y = mPosY;
     }
 }
 
@@ -531,6 +547,51 @@ void Dot::render()
 {
     // Show the dot
     gDotTexture.render( mPosX, mPosY );
+}
+
+bool checkCollision( SDL_Rect a, SDL_Rect b )
+{
+    // Sides of the rectangle
+    int leftA, leftB;
+    int rightA, rightB;
+    int topA, topB;
+    int bottomA, bottomB;
+
+    // Calculates the sides of rect A
+    leftA = a.x;
+    rightA = a.x + a.w;
+    topA = a.y;
+    bottomA = a.y + a.h;
+
+    // Calculate the sides of rect B
+    leftB = b.x;
+    rightB = b.x + b.w;
+    topB = b.y;
+    bottomB = b.y + b.h;
+
+    // Check if any of the sides from A are outside of B
+    if( bottomA <= topB )
+    {
+        return false;
+    }
+
+    if( topA >= bottomB )
+    {
+        return false;
+    }
+
+    if( rightA <= leftB )
+    {
+        return false;
+    }
+
+    if( leftA >= rightB )
+    {
+        return false;
+    }
+
+    // If none of the sides from A are outside B
+    return true;
 }
 
 bool init()
@@ -827,10 +888,9 @@ void close()
     // Free loaded images
     gFooTexture.free();
     gBackgroundTexture.free();
-
-    // free loaded images
     gTextTexture.free();
-
+    gDotTexture.free();
+    gPromptTexture.free();
 
     // Free global font
     //TTF_CloseFont( gFont );
@@ -839,12 +899,6 @@ void close()
     // Free loaded image
     //SDL_DestroyTexture( gTexture );
     //gTexture = NULL;
-
-    // Free loaded images
-    gPromptTexture.free();
-
-    // Free loaded images
-    gDotTexture.free();
 
     // Free sound effects
     Mix_FreeChunk( gScratch );
@@ -993,6 +1047,13 @@ int main(int argc, char* args[])
             // Create the Dot that will move around on the screen
             Dot dot;
 
+            // Set the wall
+            SDL_Rect wall;
+            wall.x = 300;
+            wall.y = 40;
+            wall.w = 40;
+            wall.h = 400;
+
             // while application is running
             while( !quit )
             {
@@ -1095,12 +1156,18 @@ int main(int argc, char* args[])
 
                 }
 
-                dot.move();
+                // Move the wall and check collision
+                dot.move( wall );
 
+                // Render the screen
                 // Clear the screen with the color last set from SDL_SetRenderDrawColor
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );  // Set clearing color as White
-
                 SDL_RenderClear( gRenderer );
+
+                // Render the wall
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );  // Set clearing color as White
+                SDL_RenderDrawRect( gRenderer, &wall );
+
 
                 // Render Buttons
                 //for( int i = 0; i < TOTAL_BUTTONS; ++i )
